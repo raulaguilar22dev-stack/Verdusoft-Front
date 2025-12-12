@@ -1001,7 +1001,7 @@
           async loadCategories() {
             try {
               const response = await fetch(
-                "http://127.0.0.1:8000/api/categorias",
+                "https://verdusoft-backend.onrender.com/api/categorias",
               );
               this.categories = await response.json();
             } catch (error) {
@@ -1014,7 +1014,7 @@
             this.loading = true;
             try {
               const response = await fetch(
-                "http://127.0.0.1:8000/api/productos",
+                "https://verdusoft-backend.onrender.com/api/productos",
               );
               this.products = await response.json();
               this.filterProducts();
@@ -1126,7 +1126,7 @@
           async createProduct() {
             try {
               const response = await fetch(
-                "http://127.0.0.1:8000/api/productos",
+                "https://verdusoft-backend.onrender.com/api/productos",
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -1170,7 +1170,7 @@
           async updateProduct() {
             try {
               const response = await fetch(
-                `http://127.0.0.1:8000/api/productos/${this.editingProductId}`,
+                `https://verdusoft-backend.onrender.com/api/productos/${this.editingProductId}`,
                 {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
@@ -1201,7 +1201,7 @@
 
             try {
               const response = await fetch(
-                `http://127.0.0.1:8000/api/productos/${product.id_producto}`,
+                `https://verdusoft-backend.onrender.com/api/productos/${product.id_producto}`,
                 {
                   method: "DELETE",
                 },
@@ -1281,11 +1281,14 @@
                 ],
               };
 
-              const response = await fetch("http://127.0.0.1:8000/api/ventas", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(ventaData),
-              });
+              const response = await fetch(
+                "https://verdusoft-backend.onrender.com/api/ventas",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(ventaData),
+                },
+              );
 
               if (response.ok) {
                 const venta = await response.json();

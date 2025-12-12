@@ -635,7 +635,8 @@
 
           async loadSales() {
             try {
-              let url = "http://127.0.0.1:8000/api/ventas?limit=1000";
+              let url =
+                "https://verdusoft-backend.onrender.com/api/ventas?limit=1000";
 
               if (this.filters.fecha_inicio) {
                 url += `&fecha_inicio=${this.filters.fecha_inicio}T00:00:00`;
@@ -661,7 +662,7 @@
                 Date.now() - 7 * 24 * 60 * 60 * 1000,
               ).toISOString();
               const response = await fetch(
-                `http://127.0.0.1:8000/api/ventas?fecha_inicio=${weekAgo}&limit=1000`,
+                `https://verdusoft-backend.onrender.com/api/ventas?fecha_inicio=${weekAgo}&limit=1000`,
               );
               const sales = await response.json();
 
