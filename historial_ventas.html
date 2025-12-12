@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historial de Ventas</title>
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f5f5f5;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .header h1 {
+        color: #333;
+        font-size: 1.8rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+      }
+
+      .btn-primary {
+        background: #4caf50;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #45a049;
+      }
+
+      .btn-secondary {
+        background: #2196f3;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #0b7dda;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-group label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #555;
+      }
+
+      .input,
+      .select {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #4caf50;
+      }
+
+      .stat-card.revenue {
+        border-left-color: #4caf50;
+      }
+
+      .stat-card.sales {
+        border-left-color: #2196f3;
+      }
+
+      .stat-card.products {
+        border-left-color: #ff9800;
+      }
+
+      .stat-card.average {
+        border-left-color: #9c27b0;
+      }
+
+      .stat-card h3 {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-card .value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .stat-card .change {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #666;
+      }
+
+      .charts-section {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .chart-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .chart-card h2 {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 1rem;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 300px;
+      }
+
+      .sales-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .sales-section h2 {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 1rem;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        background: #f5f5f5;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      th {
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      tbody tr:hover {
+        background: #f9f9f9;
+      }
+
+      .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .badge-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .badge-warning {
+        background: #fff3e0;
+        color: #e65100;
+      }
+
+      .badge-danger {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .product-sales-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .product-sale-card {
+        background: #f9f9f9;
+        padding: 1rem;
+        border-radius: 6px;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .product-sale-card:hover {
+        background: #f0f0f0;
+      }
+
+      .product-name {
+        font-weight: 600;
+        color: #333;
+      }
+
+      .product-stat {
+        text-align: center;
+      }
+
+      .product-stat-label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+      }
+
+      .product-stat-value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+      }
+
+      .empty {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #e0e0e0;
+      }
+
+      .tab {
+        padding: 0.75rem 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+      }
+
+      .tab.active {
+        color: #4caf50;
+        border-bottom-color: #4caf50;
+      }
+
+      .tab:hover {
+        color: #4caf50;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 1rem;
+        }
+
+        .charts-section {
+          grid-template-columns: 1fr;
+        }
+
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        .product-sale-card {
+          grid-template-columns: 1fr;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" x-data="salesDashboard" x-init="init()">
+      <div class="header">
+        <div class="header-top">
+          <h1>📊 Historial de Ventas</h1>
+          <a href="/" class="btn btn-secondary">⬅️ Volver a Productos</a>
+        </div>
+
+        <div class="filters">
+          <div class="form-group">
+            <label>📅 Fecha Inicio</label>
+            <input
+              type="date"
+              class="input"
+              x-model="filters.fecha_inicio"
+              @change="loadData()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>📅 Fecha Fin</label>
+            <input
+              type="date"
+              class="input"
+              x-model="filters.fecha_fin"
+              @change="loadData()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>💳 Método de Pago</label>
+            <select
+              class="select"
+              x-model="filters.metodo_pago"
+              @change="loadData()"
+            >
+              <option value="">Todos</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>⏱️ Periodo Rápido</label>
+            <select
+              class="select"
+              @change="setQuickPeriod($event.target.value)"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="today">Hoy</option>
+              <option value="yesterday">Ayer</option>
+              <option value="week">Esta Semana</option>
+              <option value="month">Este Mes</option>
+              <option value="last_month">Mes Pasado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card revenue">
+          <h3>💰 Total Recaudado</h3>
+          <div class="value" x-text="formatPrice(stats.total_revenue)"></div>
+          <div class="change">
+            <span>📈 Periodo seleccionado</span>
+          </div>
+        </div>
+
+        <div class="stat-card sales">
+          <h3>🛒 Total Ventas</h3>
+          <div class="value" x-text="stats.total_sales"></div>
+          <div class="change">
+            <span
+              x-text="`📦 ${stats.total_products_sold} productos vendidos`"
+            ></span>
+          </div>
+        </div>
+
+        <div class="stat-card average">
+          <h3>💵 Ticket Promedio</h3>
+          <div class="value" x-text="formatPrice(stats.average_ticket)"></div>
+        </div>
+
+        <div class="stat-card products">
+          <h3>🏆 Producto Más Vendido</h3>
+          <div
+            class="value"
+            style="font-size: 1.2rem"
+            x-text="stats.top_product || 'N/A'"
+          ></div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button
+          class="tab"
+          :class="{ active: activeTab === 'overview' }"
+          @click="activeTab = 'overview'"
+        >
+          📊 Resumen
+        </button>
+        <button
+          class="tab"
+          :class="{ active: activeTab === 'sales' }"
+          @click="activeTab = 'sales'"
+        >
+          🛒 Lista de Ventas
+        </button>
+        <button
+          class="tab"
+          :class="{ active: activeTab === 'products' }"
+          @click="activeTab = 'products'"
+        >
+          📦 Por Producto
+        </button>
+      </div>
+
+      <div x-show="loading" class="loading">⏳ Cargando datos...</div>
+
+      <div x-show="!loading && activeTab === 'overview'">
+        <div class="charts-section">
+          <div class="chart-card">
+            <h2>📈 Ventas por Día</h2>
+            <div class="chart-container">
+              <canvas id="dailySalesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h2>💳 Por Método de Pago</h2>
+            <div class="chart-container">
+              <canvas id="paymentMethodChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 2rem">
+          <h2>🏆 Top 10 Productos Más Vendidos</h2>
+          <div class="chart-container" style="height: 400px">
+            <canvas id="topProductsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div x-show="!loading && activeTab === 'sales'" class="sales-section">
+        <h2>Lista de Ventas</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Método Pago</th>
+                <th>Productos</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="sale in sales" :key="sale.id_venta">
+                <tr>
+                  <td x-text="sale.numero_ticket"></td>
+                  <td x-text="formatDate(sale.fecha)"></td>
+                  <td
+                    style="font-weight: bold; color: #4caf50"
+                    x-text="formatPrice(sale.total)"
+                  ></td>
+                  <td>
+                    <span x-text="getPaymentIcon(sale.metodo_pago)"></span>
+                    <span x-text="sale.metodo_pago"></span>
+                  </td>
+                  <td x-text="sale.detalles?.length || 0"></td>
+                  <td>
+                    <span
+                      class="badge"
+                      :class="{
+                        'badge-success': sale.estado === 'completada',
+                        'badge-warning': sale.estado === 'pendiente',
+                        'badge-danger': sale.estado === 'cancelada'
+                      }"
+                      x-text="sale.estado"
+                    ></span>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <div x-show="sales.length === 0" class="empty">
+            📭 No hay ventas en el periodo seleccionado
+          </div>
+        </div>
+      </div>
+
+      <div x-show="!loading && activeTab === 'products'" class="sales-section">
+        <h2>Ventas por Producto (Última Semana)</h2>
+        <div class="product-sales-grid">
+          <template x-for="product in productSales" :key="product.id_producto">
+            <div class="product-sale-card">
+              <div class="product-name" x-text="product.nombre"></div>
+              <div class="product-stat">
+                <div class="product-stat-label">Cantidad</div>
+                <div
+                  class="product-stat-value"
+                  x-text="product.cantidad_vendida"
+                ></div>
+              </div>
+              <div class="product-stat">
+                <div class="product-stat-label">Ingresos</div>
+                <div
+                  class="product-stat-value"
+                  style="color: #4caf50"
+                  x-text="formatPrice(product.total_vendido)"
+                ></div>
+              </div>
+              <div class="product-stat">
+                <div class="product-stat-label">Ganancia</div>
+                <div
+                  class="product-stat-value"
+                  style="color: #2196f3"
+                  x-text="formatPrice(product.ganancia)"
+                ></div>
+              </div>
+            </div>
+          </template>
+
+          <div x-show="productSales.length === 0" class="empty">
+            📭 No hay ventas de productos en la última semana
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("salesDashboard", () => ({
+          loading: true,
+          activeTab: "overview",
+          sales: [],
+          productSales: [],
+          dailySalesChart: null,
+          paymentMethodChart: null,
+          topProductsChart: null,
+
+          filters: {
+            fecha_inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
+            fecha_fin: new Date().toISOString().split("T")[0],
+            metodo_pago: "",
+          },
+
+          stats: {
+            total_revenue: 0,
+            total_sales: 0,
+            total_products_sold: 0,
+            average_ticket: 0,
+            top_product: "",
+          },
+
+          async init() {
+            await this.loadData();
+          },
+
+          async loadData() {
+            this.loading = true;
+            try {
+              await Promise.all([this.loadSales(), this.loadProductSales()]);
+              this.calculateStats();
+              this.$nextTick(() => {
+                this.renderCharts();
+              });
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          async loadSales() {
+            try {
+              let url = "http://127.0.0.1:8000/api/ventas?limit=1000";
+
+              if (this.filters.fecha_inicio) {
+                url += `&fecha_inicio=${this.filters.fecha_inicio}T00:00:00`;
+              }
+              if (this.filters.fecha_fin) {
+                url += `&fecha_fin=${this.filters.fecha_fin}T23:59:59`;
+              }
+              if (this.filters.metodo_pago) {
+                url += `&metodo_pago=${this.filters.metodo_pago}`;
+              }
+
+              const response = await fetch(url);
+              this.sales = await response.json();
+            } catch (error) {
+              console.error("Error loading sales:", error);
+              this.sales = [];
+            }
+          },
+
+          async loadProductSales() {
+            try {
+              const weekAgo = new Date(
+                Date.now() - 7 * 24 * 60 * 60 * 1000,
+              ).toISOString();
+              const response = await fetch(
+                `http://127.0.0.1:8000/api/ventas?fecha_inicio=${weekAgo}&limit=1000`,
+              );
+              const sales = await response.json();
+
+              const productMap = new Map();
+
+              for (const sale of sales) {
+                if (!sale.detalles) continue;
+
+                for (const detalle of sale.detalles) {
+                  const productId = detalle.id_producto;
+
+                  if (!productMap.has(productId)) {
+                    productMap.set(productId, {
+                      id_producto: productId,
+                      nombre:
+                        detalle.producto?.nombre || "Producto Desconocido",
+                      cantidad_vendida: 0,
+                      total_vendido: 0,
+                      ganancia: 0,
+                    });
+                  }
+
+                  const product = productMap.get(productId);
+                  product.cantidad_vendida += detalle.cantidad;
+                  product.total_vendido += detalle.subtotal;
+
+                  const costoTotal =
+                    (detalle.producto?.precio_costo || 0) * detalle.cantidad;
+                  product.ganancia += detalle.subtotal - costoTotal;
+                }
+              }
+
+              this.productSales = Array.from(productMap.values()).sort(
+                (a, b) => b.total_vendido - a.total_vendido,
+              );
+            } catch (error) {
+              console.error("Error loading product sales:", error);
+              this.productSales = [];
+            }
+          },
+
+          calculateStats() {
+            this.stats.total_revenue = this.sales.reduce(
+              (sum, sale) => sum + (sale.total || 0),
+              0,
+            );
+            this.stats.total_sales = this.sales.length;
+
+            let totalProducts = 0;
+            const productCount = new Map();
+
+            this.sales.forEach((sale) => {
+              if (sale.detalles) {
+                sale.detalles.forEach((detalle) => {
+                  totalProducts += detalle.cantidad;
+                  const productName = detalle.producto?.nombre || "Desconocido";
+                  productCount.set(
+                    productName,
+                    (productCount.get(productName) || 0) + detalle.cantidad,
+                  );
+                });
+              }
+            });
+
+            this.stats.total_products_sold = totalProducts;
+            this.stats.average_ticket =
+              this.stats.total_sales > 0
+                ? this.stats.total_revenue / this.stats.total_sales
+                : 0;
+
+            let maxCount = 0;
+            let topProduct = "";
+            productCount.forEach((count, name) => {
+              if (count > maxCount) {
+                maxCount = count;
+                topProduct = name;
+              }
+            });
+            this.stats.top_product = topProduct;
+          },
+
+          renderCharts() {
+            this.renderDailySalesChart();
+            this.renderPaymentMethodChart();
+            this.renderTopProductsChart();
+          },
+
+          renderDailySalesChart() {
+            const ctx = document.getElementById("dailySalesChart");
+            if (!ctx) return;
+
+            const dailyData = new Map();
+            this.sales.forEach((sale) => {
+              const date = new Date(sale.fecha).toLocaleDateString("es-AR");
+              dailyData.set(date, (dailyData.get(date) || 0) + sale.total);
+            });
+
+            const sortedDates = Array.from(dailyData.keys()).sort((a, b) => {
+              return (
+                new Date(a.split("/").reverse().join("-")) -
+                new Date(b.split("/").reverse().join("-"))
+              );
+            });
+
+            if (this.dailySalesChart) {
+              this.dailySalesChart.destroy();
+            }
+
+            this.dailySalesChart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: sortedDates,
+                datasets: [
+                  {
+                    label: "Ventas Diarias",
+                    data: sortedDates.map((date) => dailyData.get(date)),
+                    borderColor: "#4caf50",
+                    backgroundColor: "rgba(76, 175, 80, 0.1)",
+                    tension: 0.4,
+                    fill: true,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      callback: (value) => "$" + value.toLocaleString("es-AR"),
+                    },
+                  },
+                },
+              },
+            });
+          },
+
+          renderPaymentMethodChart() {
+            const ctx = document.getElementById("paymentMethodChart");
+            if (!ctx) return;
+
+            const methodData = new Map();
+            this.sales.forEach((sale) => {
+              const method = sale.metodo_pago || "otro";
+              methodData.set(
+                method,
+                (methodData.get(method) || 0) + sale.total,
+              );
+            });
+
+            if (this.paymentMethodChart) {
+              this.paymentMethodChart.destroy();
+            }
+
+            this.paymentMethodChart = new Chart(ctx, {
+              type: "doughnut",
+              data: {
+                labels: Array.from(methodData.keys()).map(
+                  (m) => m.charAt(0).toUpperCase() + m.slice(1),
+                ),
+                datasets: [
+                  {
+                    data: Array.from(methodData.values()),
+                    backgroundColor: [
+                      "#4caf50",
+                      "#2196f3",
+                      "#ff9800",
+                      "#9c27b0",
+                    ],
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: "bottom",
+                  },
+                },
+              },
+            });
+          },
+
+          renderTopProductsChart() {
+            const ctx = document.getElementById("topProductsChart");
+            if (!ctx) return;
+
+            const top10 = this.productSales.slice(0, 10);
+
+            if (this.topProductsChart) {
+              this.topProductsChart.destroy();
+            }
+
+            this.topProductsChart = new Chart(ctx, {
+              type: "bar",
+              data: {
+                labels: top10.map((p) => p.nombre),
+                datasets: [
+                  {
+                    label: "Ingresos",
+                    data: top10.map((p) => p.total_vendido),
+                    backgroundColor: "#4caf50",
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y",
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                },
+                scales: {
+                  x: {
+                    beginAtZero: true,
+                    ticks: {
+                      callback: (value) => "$" + value.toLocaleString("es-AR"),
+                    },
+                  },
+                },
+              },
+            });
+          },
+
+          setQuickPeriod(period) {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            switch (period) {
+              case "today":
+                this.filters.fecha_inicio = today.toISOString().split("T")[0];
+                this.filters.fecha_fin = today.toISOString().split("T")[0];
+                break;
+              case "yesterday":
+                this.filters.fecha_inicio = yesterday
+                  .toISOString()
+                  .split("T")[0];
+                this.filters.fecha_fin = yesterday.toISOString().split("T")[0];
+                break;
+              case "week":
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                this.filters.fecha_inicio = weekStart
+                  .toISOString()
+                  .split("T")[0];
+                this.filters.fecha_fin = today.toISOString().split("T")[0];
+                break;
+              case "month":
+                const monthStart = new Date(
+                  today.getFullYear(),
+                  today.getMonth(),
+                  1,
+                );
+                this.filters.fecha_inicio = monthStart
+                  .toISOString()
+                  .split("T")[0];
+                this.filters.fecha_fin = today.toISOString().split("T")[0];
+                break;
+              case "last_month":
+                const lastMonthStart = new Date(
+                  today.getFullYear(),
+                  today.getMonth() - 1,
+                  1,
+                );
+                const lastMonthEnd = new Date(
+                  today.getFullYear(),
+                  today.getMonth(),
+                  0,
+                );
+                this.filters.fecha_inicio = lastMonthStart
+                  .toISOString()
+                  .split("T")[0];
+                this.filters.fecha_fin = lastMonthEnd
+                  .toISOString()
+                  .split("T")[0];
+                break;
+            }
+
+            if (period) {
+              this.loadData();
+            }
+          },
+
+          formatPrice(price) {
+            return new Intl.NumberFormat("es-AR", {
+              style: "currency",
+              currency: "ARS",
+            }).format(price || 0);
+          },
+
+          formatDate(date) {
+            return new Date(date).toLocaleString("es-AR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          },
+
+          getPaymentIcon(method) {
+            const icons = {
+              efectivo: "💵",
+              tarjeta: "💳",
+              transferencia: "🏦",
+              otro: "📱",
+            };
+            return icons[method] || "💰";
+          },
+        }));
+      });
+    </script>
+  </body>
+</html>

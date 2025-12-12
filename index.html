@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Productos - Gestión de Inventario</title>
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f5f5f5;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* Header */
+      .header {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .header h1 {
+        color: #333;
+        font-size: 1.8rem;
+      }
+
+      /* Filtros y búsqueda */
+      .filters {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 1rem;
+        align-items: end;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-group label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #555;
+      }
+
+      .input,
+      .select {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
+
+      .input:focus,
+      .select:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
+
+      /* Botones */
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+      }
+
+      .btn-primary {
+        background: #4caf50;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #45a049;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+      }
+
+      .btn-secondary {
+        background: #2196f3;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #0b7dda;
+      }
+
+      .btn-warning {
+        background: #ff9800;
+        color: white;
+      }
+
+      .btn-warning:hover {
+        background: #e68900;
+      }
+
+      .btn-danger {
+        background: #f44336;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #da190b;
+      }
+
+      .btn-small {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      /* Stats */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card h3 {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-card p {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .stat-card.warning {
+        border-left: 4px solid #ff9800;
+      }
+
+      .stat-card.success {
+        border-left: 4px solid #4caf50;
+      }
+
+      .stat-card.info {
+        border-left: 4px solid #2196f3;
+      }
+
+      /* Productos Grid */
+      .products-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .products-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .product-card {
+        border: 1px solid #e0e0e0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s;
+        position: relative;
+      }
+
+      .product-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+      }
+
+      .product-card h3 {
+        color: #333;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .product-code {
+        font-size: 0.85rem;
+        color: #999;
+        font-family: monospace;
+      }
+
+      .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .badge-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .badge-warning {
+        background: #fff3e0;
+        color: #e65100;
+      }
+
+      .badge-danger {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .product-info {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .product-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .product-info-row:last-child {
+        border-bottom: none;
+      }
+
+      .product-info-row strong {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .product-info-row span {
+        color: #333;
+        font-weight: 500;
+      }
+
+      .price {
+        font-size: 1.3rem;
+        color: #4caf50;
+        font-weight: bold;
+      }
+
+      .stock-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stock-bar {
+        flex: 1;
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .stock-bar-fill {
+        height: 100%;
+        background: #4caf50;
+        transition: width 0.3s;
+      }
+
+      .stock-bar-fill.low {
+        background: #ff9800;
+      }
+
+      .stock-bar-fill.critical {
+        background: #f44336;
+      }
+
+      .product-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      /* Loading y Estados */
+      .loading,
+      .empty {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+      }
+
+      .loading {
+        font-size: 1.1rem;
+      }
+
+      .empty {
+        background: white;
+        border-radius: 8px;
+      }
+
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
+      /* Modal */
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .modal-header h2 {
+        color: #333;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .close-btn:hover {
+        color: #333;
+      }
+
+      .form-row {
+        margin-bottom: 1rem;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        body {
+          padding: 1rem;
+        }
+
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        .products-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" x-data="productApp" x-init="init()">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-top">
+          <h1>📦 Gestión de Productos</h1>
+          <div style="display: flex; gap: 1rem">
+            <a href="/ventas" class="btn btn-secondary"> 📊 Ver Ventas </a>
+            <button @click="showCreateModal = true" class="btn btn-primary">
+              ➕ Nuevo Producto
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+          <div class="form-group">
+            <label>🔍 Buscar producto</label>
+            <input
+              type="text"
+              class="input"
+              placeholder="Nombre o código del producto..."
+              x-model="filters.search"
+              @input="filterProducts()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>📁 Categoría</label>
+            <select
+              class="select"
+              x-model="filters.category"
+              @change="filterProducts()"
+            >
+              <option value="">Todas</option>
+              <template x-for="cat in categories" :key="cat.id_categoria">
+                <option :value="cat.id_categoria" x-text="cat.nombre"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📊 Estado Stock</label>
+            <select
+              class="select"
+              x-model="filters.stockStatus"
+              @change="filterProducts()"
+            >
+              <option value="">Todos</option>
+              <option value="normal">Stock Normal</option>
+              <option value="low">Stock Bajo</option>
+              <option value="critical">Stock Crítico</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button @click="clearFilters()" class="btn btn-secondary">
+              🔄 Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estadísticas -->
+      <div class="stats">
+        <div class="stat-card info">
+          <h3>Total Productos</h3>
+          <p x-text="stats.total"></p>
+        </div>
+        <div class="stat-card success">
+          <h3>Stock Normal</h3>
+          <p x-text="stats.normal"></p>
+        </div>
+        <div class="stat-card warning">
+          <h3>Stock Bajo</h3>
+          <p x-text="stats.low"></p>
+        </div>
+        <div class="stat-card warning" style="border-left-color: #f44336">
+          <h3>Stock Crítico</h3>
+          <p x-text="stats.critical"></p>
+        </div>
+      </div>
+
+      <!-- Lista de Productos -->
+      <div class="products-section">
+        <div class="products-header">
+          <h2 x-text="`Productos (${filteredProducts.length})`"></h2>
+        </div>
+
+        <!-- Loading -->
+        <div x-show="loading" class="loading">⏳ Cargando productos...</div>
+
+        <!-- Empty State -->
+        <div x-show="!loading && filteredProducts.length === 0" class="empty">
+          <div class="empty-icon">📭</div>
+          <h3>No se encontraron productos</h3>
+          <p>Intenta cambiar los filtros o agrega un nuevo producto</p>
+        </div>
+
+        <!-- Products Grid -->
+        <div
+          x-show="!loading && filteredProducts.length > 0"
+          class="products-grid"
+        >
+          <template
+            x-for="product in filteredProducts"
+            :key="product.id_producto"
+          >
+            <div class="product-card">
+              <div class="product-header">
+                <div>
+                  <h3 x-text="product.nombre"></h3>
+                  <span
+                    class="product-code"
+                    x-text="product.codigo || 'Sin código'"
+                  ></span>
+                </div>
+                <span
+                  class="badge"
+                  :class="{
+                    'badge-success': getStockStatus(product) === 'normal',
+                    'badge-warning': getStockStatus(product) === 'low',
+                    'badge-danger': getStockStatus(product) === 'critical'
+                  }"
+                  x-text="getStockLabel(product)"
+                ></span>
+              </div>
+
+              <div class="product-info">
+                <div class="product-info-row">
+                  <strong>📁 Categoría:</strong>
+                  <span
+                    x-text="product.categoria?.nombre || 'Sin categoría'"
+                  ></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>💰 Precio Venta:</strong>
+                  <span
+                    class="price"
+                    x-text="formatPrice(product.precio_actual)"
+                  ></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>💵 Precio Costo:</strong>
+                  <span x-text="formatPrice(product.precio_costo)"></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>📦 Stock:</strong>
+                  <div class="stock-info">
+                    <span
+                      x-text="`${product.stock} ${product.unidad_medida}`"
+                    ></span>
+                    <div class="stock-bar">
+                      <div
+                        class="stock-bar-fill"
+                        :class="{
+                          'low': product.stock <= product.stock_minimo * 1.5 && product.stock > product.stock_minimo,
+                          'critical': product.stock <= product.stock_minimo
+                        }"
+                        :style="`width: ${Math.min(100, (product.stock / (product.stock_minimo * 2)) * 100)}%`"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>⚠️ Stock Mínimo:</strong>
+                  <span x-text="product.stock_minimo"></span>
+                </div>
+              </div>
+
+              <div class="product-actions">
+                <button
+                  @click="openSaleModal(product)"
+                  class="btn btn-primary btn-small"
+                >
+                  💰 Vender
+                </button>
+                <button
+                  @click="editProduct(product)"
+                  class="btn btn-warning btn-small"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  @click="deleteProduct(product)"
+                  class="btn btn-danger btn-small"
+                >
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Modal Crear/Editar -->
+      <div
+        x-show="showCreateModal || showEditModal"
+        class="modal"
+        @click.self="closeModals()"
+      >
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2
+              x-text="showEditModal ? 'Editar Producto' : 'Nuevo Producto'"
+            ></h2>
+            <button @click="closeModals()" class="close-btn">×</button>
+          </div>
+
+          <form
+            @submit.prevent="showEditModal ? updateProduct() : createProduct()"
+          >
+            <div class="form-row">
+              <div class="form-group">
+                <label>Código</label>
+                <input
+                  type="text"
+                  class="input"
+                  x-model="formData.codigo"
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  class="input"
+                  x-model="formData.nombre"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Descripción</label>
+                <textarea
+                  class="input"
+                  x-model="formData.descripcion"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Categoría *</label>
+                <select class="select" x-model="formData.id_categoria" required>
+                  <option value="">Seleccionar...</option>
+                  <template x-for="cat in categories" :key="cat.id_categoria">
+                    <option
+                      :value="cat.id_categoria"
+                      x-text="cat.nombre"
+                    ></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+
+            <div
+              class="form-row"
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div class="form-group">
+                <label>Precio Costo *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="input"
+                  x-model="formData.precio_costo"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Precio Venta *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="input"
+                  x-model="formData.precio_actual"
+                  required
+                />
+              </div>
+            </div>
+
+            <div
+              class="form-row"
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 1rem;
+              "
+            >
+              <div class="form-group">
+                <label>Stock *</label>
+                <input
+                  type="number"
+                  class="input"
+                  x-model="formData.stock"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Stock Mínimo *</label>
+                <input
+                  type="number"
+                  class="input"
+                  x-model="formData.stock_minimo"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Unidad</label>
+                <select class="select" x-model="formData.unidad_medida">
+                  <option value="unidad">Unidad</option>
+                  <option value="kg">Kilogramo</option>
+                  <option value="litro">Litro</option>
+                  <option value="metro">Metro</option>
+                  <option value="caja">Caja</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                @click="closeModals()"
+                class="btn btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <span x-text="showEditModal ? 'Actualizar' : 'Crear'"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Venta -->
+      <div x-show="showSaleModal" class="modal" @click.self="closeSaleModal()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>💰 Registrar Venta</h2>
+            <button @click="closeSaleModal()" class="close-btn">×</button>
+          </div>
+
+          <div x-show="selectedProduct">
+            <!-- Info del producto -->
+            <div
+              style="
+                background: #f5f5f5;
+                padding: 1rem;
+                border-radius: 4px;
+                margin-bottom: 1.5rem;
+              "
+            >
+              <h3
+                x-text="selectedProduct?.nombre"
+                style="margin-bottom: 0.5rem"
+              ></h3>
+              <div style="display: grid; gap: 0.5rem; font-size: 0.9rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Precio unitario:</span>
+                  <strong
+                    x-text="formatPrice(selectedProduct?.precio_actual)"
+                  ></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <span>Stock disponible:</span>
+                  <strong
+                    x-text="`${selectedProduct?.stock} ${selectedProduct?.unidad_medida}`"
+                  ></strong>
+                </div>
+              </div>
+            </div>
+
+            <form @submit.prevent="registerSale()">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Cantidad a vender *</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    :max="selectedProduct?.stock"
+                    class="input"
+                    x-model.number="saleData.cantidad"
+                    @input="calculateSaleTotal()"
+                    required
+                  />
+                  <small style="color: #666; font-size: 0.85rem">
+                    Máximo disponible:
+                    <span x-text="selectedProduct?.stock"></span>
+                  </small>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Precio unitario *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    class="input"
+                    x-model.number="saleData.precio_unitario"
+                    @input="calculateSaleTotal()"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Descuento (opcional)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input"
+                    x-model.number="saleData.descuento"
+                    @input="calculateSaleTotal()"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Método de pago *</label>
+                  <select
+                    class="select"
+                    x-model="saleData.metodo_pago"
+                    required
+                  >
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="tarjeta">💳 Tarjeta</option>
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="otro">📱 Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Observaciones</label>
+                  <textarea
+                    class="input"
+                    x-model="saleData.observaciones"
+                    rows="2"
+                    placeholder="Notas adicionales..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div
+                style="
+                  background: #e8f5e9;
+                  padding: 1rem;
+                  border-radius: 4px;
+                  margin: 1rem 0;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  "
+                >
+                  <span style="font-size: 1.1rem; font-weight: 500"
+                    >Total a cobrar:</span
+                  >
+                  <span
+                    style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
+                    x-text="formatPrice(saleTotal)"
+                  ></span>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  type="button"
+                  @click="closeSaleModal()"
+                  class="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  ✅ Confirmar Venta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("productApp", () => ({
+          products: [],
+          filteredProducts: [],
+          categories: [],
+          loading: true,
+          showCreateModal: false,
+          showEditModal: false,
+          showSaleModal: false,
+
+          filters: {
+            search: "",
+            category: "",
+            stockStatus: "",
+          },
+
+          stats: {
+            total: 0,
+            normal: 0,
+            low: 0,
+            critical: 0,
+          },
+
+          formData: {
+            codigo: "",
+            nombre: "",
+            descripcion: "",
+            id_categoria: "",
+            precio_actual: 0,
+            precio_costo: 0,
+            stock: 0,
+            stock_minimo: 0,
+            unidad_medida: "unidad",
+          },
+
+          editingProductId: null,
+
+          selectedProduct: null,
+          saleData: {
+            cantidad: 1,
+            precio_unitario: 0,
+            descuento: 0,
+            metodo_pago: "efectivo",
+            observaciones: "",
+          },
+          saleTotal: 0,
+
+          async init() {
+            await this.loadCategories();
+            await this.loadProducts();
+          },
+
+          async loadCategories() {
+            try {
+              const response = await fetch(
+                "http://127.0.0.1:8000/api/categorias",
+              );
+              this.categories = await response.json();
+            } catch (error) {
+              console.error("Error loading categories:", error);
+              alert("Error al cargar categorías");
+            }
+          },
+
+          async loadProducts() {
+            this.loading = true;
+            try {
+              const response = await fetch(
+                "http://127.0.0.1:8000/api/productos",
+              );
+              this.products = await response.json();
+              this.filterProducts();
+              this.calculateStats();
+            } catch (error) {
+              console.error("Error loading products:", error);
+              alert("Error al cargar productos");
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          filterProducts() {
+            let filtered = [...this.products];
+
+            // Filtro de búsqueda
+            if (this.filters.search) {
+              const search = this.filters.search.toLowerCase();
+              filtered = filtered.filter(
+                (p) =>
+                  p.nombre.toLowerCase().includes(search) ||
+                  (p.codigo && p.codigo.toLowerCase().includes(search)),
+              );
+            }
+
+            // Filtro de categoría
+            if (this.filters.category) {
+              filtered = filtered.filter(
+                (p) => p.id_categoria == this.filters.category,
+              );
+            }
+
+            // Filtro de estado de stock
+            if (this.filters.stockStatus) {
+              filtered = filtered.filter(
+                (p) => this.getStockStatus(p) === this.filters.stockStatus,
+              );
+            }
+
+            this.filteredProducts = filtered;
+          },
+
+          calculateStats() {
+            this.stats = {
+              total: this.products.length,
+              normal: 0,
+              low: 0,
+              critical: 0,
+            };
+
+            this.products.forEach((p) => {
+              const status = this.getStockStatus(p);
+              if (status === "normal") this.stats.normal++;
+              else if (status === "low") this.stats.low++;
+              else if (status === "critical") this.stats.critical++;
+            });
+          },
+
+          getStockStatus(product) {
+            if (product.stock <= product.stock_minimo) return "critical";
+            if (product.stock <= product.stock_minimo * 1.5) return "low";
+            return "normal";
+          },
+
+          getStockLabel(product) {
+            const status = this.getStockStatus(product);
+            if (status === "critical") return "🔴 Crítico";
+            if (status === "low") return "🟡 Bajo";
+            return "🟢 Normal";
+          },
+
+          formatPrice(price) {
+            return new Intl.NumberFormat("es-AR", {
+              style: "currency",
+              currency: "ARS",
+            }).format(price || 0);
+          },
+
+          clearFilters() {
+            this.filters = {
+              search: "",
+              category: "",
+              stockStatus: "",
+            };
+            this.filterProducts();
+          },
+
+          resetForm() {
+            this.formData = {
+              codigo: "",
+              nombre: "",
+              descripcion: "",
+              id_categoria: "",
+              precio_actual: 0,
+              precio_costo: 0,
+              stock: 0,
+              stock_minimo: 0,
+              unidad_medida: "unidad",
+            };
+            this.editingProductId = null;
+          },
+
+          closeModals() {
+            this.showCreateModal = false;
+            this.showEditModal = false;
+            this.resetForm();
+          },
+
+          async createProduct() {
+            try {
+              const response = await fetch(
+                "http://127.0.0.1:8000/api/productos",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(this.formData),
+                },
+              );
+
+              if (response.ok) {
+                alert("✅ Producto creado exitosamente");
+                this.closeModals();
+                await this.loadProducts();
+              } else {
+                const error = await response.json();
+                alert(
+                  "❌ Error: " +
+                    (error.detail || "No se pudo crear el producto"),
+                );
+              }
+            } catch (error) {
+              console.error("Error creating product:", error);
+              alert("❌ Error al crear producto");
+            }
+          },
+
+          editProduct(product) {
+            this.formData = {
+              codigo: product.codigo || "",
+              nombre: product.nombre,
+              descripcion: product.descripcion || "",
+              id_categoria: product.id_categoria,
+              precio_actual: product.precio_actual,
+              precio_costo: product.precio_costo || 0,
+              stock: product.stock,
+              stock_minimo: product.stock_minimo,
+              unidad_medida: product.unidad_medida,
+            };
+            this.editingProductId = product.id_producto;
+            this.showEditModal = true;
+          },
+
+          async updateProduct() {
+            try {
+              const response = await fetch(
+                `http://127.0.0.1:8000/api/productos/${this.editingProductId}`,
+                {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(this.formData),
+                },
+              );
+
+              if (response.ok) {
+                alert("✅ Producto actualizado exitosamente");
+                this.closeModals();
+                await this.loadProducts();
+              } else {
+                const error = await response.json();
+                alert(
+                  "❌ Error: " +
+                    (error.detail || "No se pudo actualizar el producto"),
+                );
+              }
+            } catch (error) {
+              console.error("Error updating product:", error);
+              alert("❌ Error al actualizar producto");
+            }
+          },
+
+          async deleteProduct(product) {
+            if (!confirm(`¿Estás seguro de eliminar "${product.nombre}"?`))
+              return;
+
+            try {
+              const response = await fetch(
+                `http://127.0.0.1:8000/api/productos/${product.id_producto}`,
+                {
+                  method: "DELETE",
+                },
+              );
+
+              if (response.ok) {
+                alert("✅ Producto eliminado exitosamente");
+                await this.loadProducts();
+              } else {
+                const error = await response.json();
+                alert(
+                  "❌ Error: " +
+                    (error.detail || "No se pudo eliminar el producto"),
+                );
+              }
+            } catch (error) {
+              console.error("Error deleting product:", error);
+              alert("❌ Error al eliminar producto");
+            }
+          },
+
+          openSaleModal(product) {
+            this.selectedProduct = product;
+            this.saleData = {
+              cantidad: 1,
+              precio_unitario: product.precio_actual,
+              descuento: 0,
+              metodo_pago: "efectivo",
+              observaciones: "",
+            };
+            this.calculateSaleTotal();
+            this.showSaleModal = true;
+          },
+
+          closeSaleModal() {
+            this.showSaleModal = false;
+            this.selectedProduct = null;
+            this.saleTotal = 0;
+          },
+
+          calculateSaleTotal() {
+            const subtotal =
+              this.saleData.cantidad * this.saleData.precio_unitario;
+            this.saleTotal = Math.max(
+              0,
+              subtotal - (this.saleData.descuento || 0),
+            );
+          },
+
+          async registerSale() {
+            // Validar stock
+            if (this.saleData.cantidad > this.selectedProduct.stock) {
+              alert("❌ No hay suficiente stock disponible");
+              return;
+            }
+
+            if (this.saleData.cantidad <= 0) {
+              alert("❌ La cantidad debe ser mayor a 0");
+              return;
+            }
+
+            try {
+              const ventaData = {
+                numero_ticket: `TICKET-${Date.now()}`,
+                id_cliente: null, // Cliente genérico
+                fecha: new Date().toISOString(),
+                metodo_pago: this.saleData.metodo_pago,
+                observaciones: this.saleData.observaciones || null,
+                estado: "completada",
+                detalles: [
+                  {
+                    id_producto: this.selectedProduct.id_producto,
+                    cantidad: this.saleData.cantidad,
+                    precio_unitario: this.saleData.precio_unitario,
+                    descuento: this.saleData.descuento || 0,
+                  },
+                ],
+              };
+
+              const response = await fetch("http://127.0.0.1:8000/api/ventas", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(ventaData),
+              });
+
+              if (response.ok) {
+                const venta = await response.json();
+                alert(
+                  `✅ Venta registrada exitosamente!\n\nTicket: ${venta.numero_ticket}\nTotal: ${this.formatPrice(this.saleTotal)}`,
+                );
+                this.closeSaleModal();
+                await this.loadProducts();
+              } else {
+                const error = await response.json();
+                alert(
+                  "❌ Error: " +
+                    (error.detail || "No se pudo registrar la venta"),
+                );
+              }
+            } catch (error) {
+              console.error("Error registering sale:", error);
+              alert("❌ Error al registrar la venta");
+            }
+          },
+        }));
+      });
+    </script>
+  </body>
+</html>
