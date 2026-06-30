@@ -24,6 +24,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     async init() {
+      requireAuth();
       await this.loadData();
     },
 

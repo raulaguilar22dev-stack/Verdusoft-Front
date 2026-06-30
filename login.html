@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesion - Verdusoft</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <style>
+      .auth-container {
+        max-width: 400px;
+        margin: 5rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .auth-container h1 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #2c3e50;
+      }
+      .auth-links {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+      .auth-links a {
+        color: #4caf50;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-container">
+      <h1>🔐 Iniciar Sesion</h1>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="input" id="email" required />
+        </div>
+        <div class="form-group">
+          <label>Contrasena</label>
+          <input type="password" class="input" id="password" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%">
+          Ingresar
+        </button>
+      </form>
+      <div class="auth-links">
+        <a href="./register.html">Crear cuenta de admin</a>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          await signIn(email, password);
+          showNotification("Sesion iniciada correctamente", "success");
+          window.location.href = "./index.html";
+        } catch (err) {
+          showNotification(err.message || "Error al iniciar sesion", "error");
+        }
+      });
+    </script>
+  </body>
+</html>

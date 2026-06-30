@@ -3,15 +3,30 @@
 async function apiRequest(endpoint, options = {}) {
   const url = `${CONFIG.API_BASE_URL}${endpoint}`;
 
+  const token = await getToken();
+
   const defaults = {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   };
 
   try {
     const response = await fetch(url, { ...defaults, ...options });
+
+    if (response.status === 401) {
+      showNotification("Sesion expirada. Inicia sesion de nuevo.", "error");
+      await signOut();
+      window.location.href = "./login.html";
+      return;
+    }
+
+    if (response.status === 403) {
+      showNotification("Acceso denegado: no tenes permisos.", "error");
+      throw new ApiError("Acceso denegado", 403, {});
+    }
 
     if (!response.ok) {
       let errorBody;
@@ -54,6 +69,10 @@ class ApiError extends Error {
    ============================================================ */
 
 const API = {
+  // Auth
+  registerAdmin: (data) =>
+    apiRequest("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+
   // Categorias
   getCategorias: () => apiRequest("/categorias"),
 

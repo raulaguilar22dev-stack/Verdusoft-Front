@@ -51,6 +51,7 @@ document.addEventListener("alpine:init", () => {
     page: 0,
 
     async init() {
+      requireAuth();
       await this.loadCategories();
       await this.loadProducts();
     },
