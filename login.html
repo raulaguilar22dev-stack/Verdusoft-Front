@@ -64,7 +64,7 @@
         try {
           await signIn(email, password);
           showNotification("Sesion iniciada correctamente", "success");
-          window.location.href = "./index.html";
+          window.location.href = "./admin.html";
         } catch (err) {
           showNotification(err.message || "Error al iniciar sesion", "error");
         }

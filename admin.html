@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Productos - Gestion de Inventario</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/product-app.js"></script>
+  </head>
+  <body>
+    <div class="container" x-data="productApp" x-init="init()">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-top">
+          <h1>📦 Gestion de Productos</h1>
+          <div style="display: flex; gap: 1rem; align-items: center">
+            <span
+              x-data="{ userEmail: '' }"
+              x-init="getCurrentUser().then(u => userEmail = u?.email || '')"
+              x-text="userEmail"
+              style="font-size: 0.9rem; color: #666"
+            ></span>
+            <button @click="signOut()" class="btn btn-secondary">🚪 Salir</button>
+            <a href="./historial_ventas.html" class="btn btn-secondary">
+              📊 Ver Ventas
+            </a>
+            <button @click="showCreateModal = true" class="btn btn-primary">
+              ➕ Nuevo Producto
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+          <div class="form-group">
+            <label>🔍 Buscar producto</label>
+            <input
+              type="text"
+              class="input"
+              placeholder="Nombre o codigo del producto..."
+              x-model="filters.search"
+              @input="filterProducts()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>📁 Categoria</label>
+            <select
+              class="select"
+              x-model="filters.category"
+              @change="filterProducts()"
+            >
+              <option value="">Todas</option>
+              <template x-for="cat in categories" :key="cat.id_categoria">
+                <option :value="cat.id_categoria" x-text="cat.nombre"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📊 Estado Stock</label>
+            <select
+              class="select"
+              x-model="filters.stockStatus"
+              @change="filterProducts()"
+            >
+              <option value="">Todos</option>
+              <option value="normal">Stock Normal</option>
+              <option value="low">Stock Bajo</option>
+              <option value="critical">Stock Critico</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button @click="clearFilters()" class="btn btn-secondary">
+              🔄 Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estadisticas -->
+      <div class="stats">
+        <div class="stat-card info">
+          <h3>Total Productos</h3>
+          <p x-text="stats.total"></p>
+        </div>
+        <div class="stat-card success">
+          <h3>Stock Normal</h3>
+          <p x-text="stats.normal"></p>
+        </div>
+        <div class="stat-card warning">
+          <h3>Stock Bajo</h3>
+          <p x-text="stats.low"></p>
+        </div>
+        <div class="stat-card warning" style="border-left-color: #f44336">
+          <h3>Stock Critico</h3>
+          <p x-text="stats.critical"></p>
+        </div>
+      </div>
+
+      <!-- Lista de Productos -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2 x-text="`Productos (${filteredProducts.length})`"></h2>
+        </div>
+
+        <!-- Loading -->
+        <div x-show="loading" class="loading">⏳ Cargando productos...</div>
+
+        <!-- Empty State -->
+        <div x-show="!loading && filteredProducts.length === 0" class="empty">
+          <div class="empty-icon">📭</div>
+          <h3>No se encontraron productos</h3>
+          <p>Intenta cambiar los filtros o agrega un nuevo producto</p>
+        </div>
+
+        <!-- Products Grid -->
+        <div
+          x-show="!loading && filteredProducts.length > 0"
+          class="products-grid"
+        >
+          <template
+            x-for="product in paginatedProducts"
+            :key="product.id_producto"
+          >
+            <div class="product-card">
+              <div class="product-header">
+                <div>
+                  <h3 x-text="product.nombre"></h3>
+                  <span
+                    class="product-code"
+                    x-text="product.codigo || 'Sin codigo'"
+                  ></span>
+                </div>
+                <span
+                  class="badge"
+                  :class="{
+                    'badge-success': getStockStatus(product) === 'normal',
+                    'badge-warning': getStockStatus(product) === 'low',
+                    'badge-danger': getStockStatus(product) === 'critical'
+                  }"
+                  x-text="getStockLabel(product)"
+                ></span>
+              </div>
+
+              <div class="product-info">
+                <div class="product-info-row">
+                  <strong>📁 Categoria:</strong>
+                  <span
+                    x-text="product.categoria?.nombre || 'Sin categoria'"
+                  ></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>💰 Precio Venta:</strong>
+                  <span
+                    class="price"
+                    x-text="formatPrice(product.precio_actual)"
+                  ></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>💵 Precio Costo:</strong>
+                  <span x-text="formatPrice(product.precio_costo)"></span>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>📦 Stock:</strong>
+                  <div class="stock-info">
+                    <span
+                      x-text="`${product.stock} ${product.unidad_medida}`"
+                    ></span>
+                    <div class="stock-bar">
+                      <div
+                        class="stock-bar-fill"
+                        :class="{
+                          'low': product.stock <= product.stock_minimo * 1.5 && product.stock > product.stock_minimo,
+                          'critical': product.stock <= product.stock_minimo
+                        }"
+                        :style="`width: ${Math.min(100, (product.stock / (product.stock_minimo * 2)) * 100)}%`"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="product-info-row">
+                  <strong>⚠️ Stock Minimo:</strong>
+                  <span x-text="product.stock_minimo"></span>
+                </div>
+              </div>
+
+              <div class="product-actions">
+                <button
+                  @click="openSaleModal(product)"
+                  class="btn btn-primary btn-small"
+                >
+                  💰 Vender
+                </button>
+                <button
+                  @click="editProduct(product)"
+                  class="btn btn-warning btn-small"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  @click="deleteProduct(product)"
+                  class="btn btn-danger btn-small"
+                >
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Paginacion -->
+        <div
+          x-show="!loading && filteredProducts.length > 0"
+          class="pagination"
+        >
+          <button
+            @click="prevPage()"
+            :disabled="page === 0"
+            class="btn btn-secondary btn-small"
+          >
+            ← Anterior
+          </button>
+          <span class="pagination-info" x-text="paginationInfo"></span>
+          <button
+            @click="nextPage()"
+            :disabled="page >= totalPages - 1"
+            class="btn btn-secondary btn-small"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Crear/Editar -->
+      <div
+        x-show="showCreateModal || showEditModal"
+        class="modal"
+        @click.self="closeModals()"
+      >
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2
+              x-text="showEditModal ? 'Editar Producto' : 'Nuevo Producto'"
+            ></h2>
+            <button @click="closeModals()" class="close-btn">×</button>
+          </div>
+
+          <form
+            @submit.prevent="showEditModal ? updateProduct() : createProduct()"
+          >
+            <div class="form-row">
+              <div class="form-group">
+                <label>Codigo</label>
+                <input
+                  type="text"
+                  class="input"
+                  x-model="formData.codigo"
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  class="input"
+                  x-model="formData.nombre"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Descripcion</label>
+                <textarea
+                  class="input"
+                  x-model="formData.descripcion"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Categoria *</label>
+                <select class="select" x-model="formData.id_categoria" required>
+                  <option value="">Seleccionar...</option>
+                  <template x-for="cat in categories" :key="cat.id_categoria">
+                    <option
+                      :value="cat.id_categoria"
+                      x-text="cat.nombre"
+                    ></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+
+            <div
+              class="form-row"
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div class="form-group">
+                <label>Precio Costo *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="input"
+                  x-model="formData.precio_costo"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Precio Venta *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="input"
+                  x-model="formData.precio_actual"
+                  required
+                />
+              </div>
+            </div>
+
+            <div
+              class="form-row"
+              style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;"
+            >
+              <div class="form-group">
+                <label>Stock *</label>
+                <input
+                  type="number"
+                  class="input"
+                  x-model="formData.stock"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Stock Minimo *</label>
+                <input
+                  type="number"
+                  class="input"
+                  x-model="formData.stock_minimo"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Unidad</label>
+                <select class="select" x-model="formData.unidad_medida">
+                  <option value="unidad">Unidad</option>
+                  <option value="kg">Kilogramo</option>
+                  <option value="litro">Litro</option>
+                  <option value="metro">Metro</option>
+                  <option value="caja">Caja</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                @click="closeModals()"
+                class="btn btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <span x-text="showEditModal ? 'Actualizar' : 'Crear'"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Venta -->
+      <div x-show="showSaleModal" class="modal" @click.self="closeSaleModal()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>💰 Registrar Venta</h2>
+            <button @click="closeSaleModal()" class="close-btn">×</button>
+          </div>
+
+          <div x-show="selectedProduct">
+            <div
+              style="
+                background: #f5f5f5;
+                padding: 1rem;
+                border-radius: 4px;
+                margin-bottom: 1.5rem;
+              "
+            >
+              <h3
+                x-text="selectedProduct?.nombre"
+                style="margin-bottom: 0.5rem"
+              ></h3>
+              <div style="display: grid; gap: 0.5rem; font-size: 0.9rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Precio unitario:</span>
+                  <strong
+                    x-text="formatPrice(selectedProduct?.precio_actual)"
+                  ></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between">
+                  <span>Stock disponible:</span>
+                  <strong
+                    x-text="`${selectedProduct?.stock} ${selectedProduct?.unidad_medida}`"
+                  ></strong>
+                </div>
+              </div>
+            </div>
+
+            <form @submit.prevent="registerSale()">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Cantidad a vender *</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    :max="selectedProduct?.stock"
+                    class="input"
+                    x-model.number="saleData.cantidad"
+                    @input="calculateSaleTotal()"
+                    required
+                  />
+                  <small style="color: #666; font-size: 0.85rem">
+                    Maximo disponible:
+                    <span x-text="selectedProduct?.stock"></span>
+                  </small>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Precio unitario *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    class="input"
+                    x-model.number="saleData.precio_unitario"
+                    @input="calculateSaleTotal()"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Descuento (opcional)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="input"
+                    x-model.number="saleData.descuento"
+                    @input="calculateSaleTotal()"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Metodo de pago *</label>
+                  <select
+                    class="select"
+                    x-model="saleData.metodo_pago"
+                    required
+                  >
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="tarjeta">💳 Tarjeta</option>
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="otro">📱 Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Observaciones</label>
+                  <textarea
+                    class="input"
+                    x-model="saleData.observaciones"
+                    rows="2"
+                    placeholder="Notas adicionales..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div
+                style="
+                  background: #e8f5e9;
+                  padding: 1rem;
+                  border-radius: 4px;
+                  margin: 1rem 0;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  "
+                >
+                  <span style="font-size: 1.1rem; font-weight: 500"
+                    >Total a cobrar:</span
+                  >
+                  <span
+                    style="font-size: 1.5rem; font-weight: bold; color: #2e7d32"
+                    x-text="formatPrice(saleTotal)"
+                  ></span>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  type="button"
+                  @click="closeSaleModal()"
+                  class="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  ✅ Confirmar Venta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

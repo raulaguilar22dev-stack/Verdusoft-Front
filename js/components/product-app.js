@@ -1,4 +1,4 @@
-/** Componente Alpine: Gestion de Productos (index.html) */
+/** Componente Alpine: Gestion de Productos (admin.html) */
 
 document.addEventListener("alpine:init", () => {
   Alpine.data("productApp", () => ({
