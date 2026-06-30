@@ -17,6 +17,27 @@ async function apiRequest(endpoint, options = {}) {
     const response = await fetch(url, { ...defaults, ...options });
 
     if (response.status === 401) {
+      // Intentar refrescar la sesion antes de rendirse
+      const sb = getSupabaseClient();
+      const { data: refreshData, error: refreshError } =
+        await sb.auth.refreshSession();
+      if (!refreshError && refreshData.session) {
+        // Reintentar el request con el token nuevo
+        const newToken = refreshData.session.access_token;
+        const retryDefaults = {
+          headers: {
+            "Content-Type": "application/json",
+            ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
+            ...options.headers,
+          },
+        };
+        const retryResponse = await fetch(url, { ...retryDefaults, ...options });
+        if (retryResponse.ok) {
+          if (retryResponse.status === 204) return null;
+          return await retryResponse.json();
+        }
+      }
+      // Refresh fallo: redirigir a login
       showNotification("Sesion expirada. Inicia sesion de nuevo.", "error");
       await signOut();
       window.location.href = "./login.html";
