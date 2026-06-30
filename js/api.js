@@ -78,6 +78,7 @@ const API = {
 
   // Productos
   getProductos: () => apiRequest("/productos"),
+  getCatalogo: () => apiRequest("/productos/catalogo"),
   createProducto: (data) =>
     apiRequest("/productos", { method: "POST", body: JSON.stringify(data) }),
   updateProducto: (id, data) =>
