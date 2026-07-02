@@ -1,6 +1,7 @@
 /** Capa de autenticacion con Supabase Auth. */
 
 let _supabaseClient = null;
+let _heartbeatInterval = null;
 
 function getSupabaseClient() {
   if (!_supabaseClient) {
@@ -30,9 +31,30 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
+  stopSessionHeartbeat();
   const sb = getSupabaseClient();
   await sb.auth.signOut();
   localStorage.removeItem("sb-session");
+}
+
+function startSessionHeartbeat(intervalMs = 300000) {
+  stopSessionHeartbeat();
+  _heartbeatInterval = setInterval(async () => {
+    const sb = getSupabaseClient();
+    const { data, error } = await sb.auth.getSession();
+    if (error || !data.session) {
+      console.warn("[heartbeat] Sesion no encontrada o error:", error);
+      return;
+    }
+    console.log("[heartbeat] Sesion viva, token expira en", Math.round(data.session.expires_in), "s");
+  }, intervalMs);
+}
+
+function stopSessionHeartbeat() {
+  if (_heartbeatInterval) {
+    clearInterval(_heartbeatInterval);
+    _heartbeatInterval = null;
+  }
 }
 
 async function getToken() {
@@ -63,6 +85,15 @@ function requireAuth() {
 /* Escuchar cambios de auth (login/logout en otra pestana) */
 getSupabaseClient().auth.onAuthStateChange((event, session) => {
   if (event === "SIGNED_OUT") {
+    stopSessionHeartbeat();
     window.location.href = "./login.html";
+  }
+  if (event === "INITIAL_SESSION" && !session) {
+    // No hay sesion al cargar la pagina: redirigir si estamos en una pagina protegida
+    const protectedPages = ["admin.html", "historial_ventas.html"];
+    const currentPage = window.location.pathname.split("/").pop();
+    if (protectedPages.includes(currentPage)) {
+      window.location.href = "./login.html";
+    }
   }
 });
