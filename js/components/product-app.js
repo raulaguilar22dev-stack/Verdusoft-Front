@@ -9,6 +9,12 @@ document.addEventListener("alpine:init", () => {
     showCreateModal: false,
     showEditModal: false,
     showSaleModal: false,
+    showCategoryModal: false,
+
+    categoryFormData: {
+      nombre: "",
+      descripcion: "",
+    },
 
     filters: {
       search: "",
@@ -155,6 +161,28 @@ document.addEventListener("alpine:init", () => {
         stockStatus: "",
       };
       this.filterProducts();
+    },
+
+    openCategoryModal() {
+      this.categoryFormData = { nombre: "", descripcion: "" };
+      this.showCategoryModal = true;
+    },
+
+    closeCategoryModal() {
+      this.showCategoryModal = false;
+      this.categoryFormData = { nombre: "", descripcion: "" };
+    },
+
+    async createCategory() {
+      try {
+        await API.createCategoria(this.categoryFormData);
+        showNotification("Categoria creada exitosamente", "success");
+        this.closeCategoryModal();
+        await this.loadCategories();
+      } catch (err) {
+        console.error("Error creating category:", err);
+        showNotification(err.message || "Error al crear categoria", "error");
+      }
     },
 
     resetForm() {

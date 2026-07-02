@@ -96,6 +96,8 @@ const API = {
 
   // Categorias
   getCategorias: () => apiRequest("/categorias"),
+  createCategoria: (data) =>
+    apiRequest("/categorias", { method: "POST", body: JSON.stringify(data) }),
 
   // Productos
   getProductos: () => apiRequest("/productos"),

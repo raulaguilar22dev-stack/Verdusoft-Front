@@ -54,16 +54,26 @@
 
           <div class="form-group">
             <label>📁 Categoria</label>
-            <select
-              class="select"
-              x-model="filters.category"
-              @change="filterProducts()"
-            >
-              <option value="">Todas</option>
-              <template x-for="cat in categories" :key="cat.id_categoria">
-                <option :value="cat.id_categoria" x-text="cat.nombre"></option>
-              </template>
-            </select>
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+              <select
+                class="select"
+                x-model="filters.category"
+                @change="filterProducts()"
+                style="flex: 1"
+              >
+                <option value="">Todas</option>
+                <template x-for="cat in categories" :key="cat.id_categoria">
+                  <option :value="cat.id_categoria" x-text="cat.nombre"></option>
+                </template>
+              </select>
+              <button
+                @click="openCategoryModal()"
+                class="btn btn-primary btn-small"
+                title="Crear nueva categoria"
+              >
+                ➕
+              </button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -547,6 +557,57 @@
               </div>
             </form>
           </div>
+        </div>
+      </div>
+
+      <!-- Modal Crear Categoria -->
+      <div
+        x-show="showCategoryModal"
+        class="modal"
+        @click.self="closeCategoryModal()"
+      >
+        <div class="modal-content" style="max-width: 400px">
+          <div class="modal-header">
+            <h2>📁 Nueva Categoria</h2>
+            <button @click="closeCategoryModal()" class="close-btn">×</button>
+          </div>
+
+          <form @submit.prevent="createCategory()">
+            <div class="form-group">
+              <label>Nombre *</label>
+              <input
+                type="text"
+                class="input"
+                x-model="categoryFormData.nombre"
+                required
+                maxlength="100"
+                placeholder="Ej: Verduras, Lacteos..."
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Descripcion</label>
+              <textarea
+                class="input"
+                x-model="categoryFormData.descripcion"
+                rows="2"
+                placeholder="Opcional"
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                @click="closeCategoryModal()"
+                class="btn btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Crear Categoria
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
